@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Coach — Biblioteca 3.0 (Prototipo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --carta:#F5F6F2;          /* sfondo: carta nebbia */
+  --scheda:#FFFFFF;
+  --inchiostro:#26323C;     /* testo */
+  --grigio:#6B7680;
+  --salvia:#3E6F6E;         /* azione primaria: petrolio calmo */
+  --salvia-chiaro:#E3EDEA;
+  --ambra:#B97F2A;          /* "da riascoltare" — mai rosso */
+  --ambra-fondo:#F7E9CE;
+  --cielo:#6E93B5;          /* grafico */
+  --linea:#DDE0D8;
+  --raggio:18px;
+  --fs:1rem;                /* variabili di accessibilità */
+  --lh:1.65;
+  --ls:0em;
+  --ws:0em;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:17px}
+body{
+  background:var(--carta);
+  color:var(--inchiostro);
+  font-family:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  font-size:var(--fs);
+  line-height:var(--lh);
+  letter-spacing:var(--ls);
+  word-spacing:var(--ws);
+  min-height:100vh;
+}
+h1,h2,h3,.display{font-family:"Baloo 2","Atkinson Hyperlegible",system-ui,sans-serif;font-weight:600;letter-spacing:0}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+button:focus-visible, [tabindex]:focus-visible{outline:3px solid var(--cielo);outline-offset:3px;border-radius:8px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
+/* ---------- struttura ---------- */
+.app{max-width:860px;margin:0 auto;padding:20px 18px 90px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo .mark{width:40px;height:40px;border-radius:12px;background:var(--salvia);color:#fff;display:grid;place-items:center;font-family:"Baloo 2";font-size:1.3rem;font-weight:700}
+.logo .name{font-family:"Baloo 2";font-weight:700;font-size:1.15rem}
+.logo .sub{font-size:.78rem;color:var(--grigio)}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--scheda);border:1.5px solid var(--linea);border-radius:999px;padding:7px 14px;font-size:.9rem}
+.chip .dot{width:10px;height:10px;border-radius:50%;background:var(--salvia)}
+
+.card{background:var(--scheda);border:1.5px solid var(--linea);border-radius:var(--raggio);padding:26px}
+.card + .card{margin-top:16px}
+.eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.12em;color:var(--grigio);margin-bottom:6px}
+.hint{color:var(--grigio);font-size:.92rem}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--salvia);color:#fff;border-radius:14px;padding:14px 26px;font-family:"Baloo 2";font-weight:600;font-size:1.05rem;transition:transform .15s ease, box-shadow .15s ease}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(62,111,110,.25)}
+.btn.ghost{background:var(--salvia-chiaro);color:var(--salvia)}
+.btn.quiet{background:transparent;color:var(--salvia);text-decoration:underline;text-underline-offset:4px;padding:10px 6px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ---------- navigazione a schede ---------- */
+nav.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--scheda);border-top:1.5px solid var(--linea);display:flex;justify-content:center;gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));z-index:50}
+nav.tabs button{flex:0 1 150px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px;border-radius:12px;font-size:.78rem;color:var(--grigio)}
+nav.tabs button .ico{font-size:1.25rem;line-height:1}
+nav.tabs button[aria-current="page"]{background:var(--salvia-chiaro);color:var(--salvia);font-weight:700}
+.screen{display:none;animation:fade .35s ease}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- accesso (pseudonimi) ---------- */
+.animali{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:16px}
+.animali button{background:var(--carta);border:1.5px solid var(--linea);border-radius:14px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:"Baloo 2";font-weight:600}
+.animali button:hover{border-color:var(--salvia)}
+.animali .emo{font-size:1.9rem}
+.animali .cod{font-size:.78rem;color:var(--grigio);font-family:"Atkinson Hyperlegible"}
+
+/* ---------- lettura ---------- */
+.libro{display:flex;gap:14px;align-items:center}
+.copertina{width:52px;height:70px;border-radius:6px;background:linear-gradient(160deg,var(--cielo),var(--salvia));flex:none;display:grid;place-items:center;color:#fff;font-family:"Baloo 2";font-size:1.4rem}
+.passo{font-size:calc(var(--fs) * 1.28);line-height:calc(var(--lh) + .25);margin:20px 0;max-width:62ch}
+.passo .w{border-radius:6px;padding:1px 2px}
+.passo .w.riascolta{background:var(--ambra-fondo);box-shadow:inset 0 -3px 0 var(--ambra)}
+.legenda{display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--grigio)}
+.legenda .sw{width:20px;height:14px;border-radius:4px;background:var(--ambra-fondo);box-shadow:inset 0 -3px 0 var(--ambra)}
+
+.registra{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 0 8px}
+.mic{width:110px;height:110px;border-radius:50%;background:var(--salvia);color:#fff;font-size:2.6rem;display:grid;place-items:center;transition:transform .2s}
+.mic:hover{transform:scale(1.04)}
+.mic.rec{background:var(--ambra);animation:respiro 2.6s ease-in-out infinite}
+@keyframes respiro{0%,100%{box-shadow:0 0 0 0 rgba(185,127,42,.35)}50%{box-shadow:0 0 0 22px rgba(185,127,42,0)}}
+.stato-rec{font-size:.95rem;color:var(--grigio)}
+
+/* ---------- risultati ---------- */
+.numeri{display:flex;gap:14px;flex-wrap:wrap;margin:18px 0}
+.numero{flex:1 1 140px;background:var(--carta);border:1.5px solid var(--linea);border-radius:14px;padding:16px;text-align:center}
+.numero .val{font-family:"Baloo 2";font-weight:700;font-size:1.9rem;color:var(--salvia)}
+.numero .lab{font-size:.82rem;color:var(--grigio)}
+.formula{background:var(--salvia-chiaro);border-radius:14px;padding:18px 20px;margin-top:14px}
+.formula code{font-family:ui-monospace,Consolas,monospace;font-size:.95rem;background:#fff;border-radius:8px;padding:3px 8px}
+.attesa{display:flex;gap:10px;align-items:flex-start;background:var(--ambra-fondo);border-radius:14px;padding:14px 16px;margin-top:14px;font-size:.94rem}
+
+/* ---------- progressi ---------- */
+.grafico{width:100%;height:auto}
+.grafico .asse{stroke:var(--linea);stroke-width:1.5}
+.grafico .curva{stroke:var(--cielo);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.grafico .punto{fill:#fff;stroke:var(--cielo);stroke-width:3}
+.grafico .punto.oggi{fill:var(--salvia);stroke:var(--salvia)}
+.grafico text{font-family:"Atkinson Hyperlegible";font-size:11px;fill:var(--grigio)}
+
+/* ---------- docente ---------- */
+.riga-verifica{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1.5px solid var(--linea);flex-wrap:wrap}
+.riga-verifica:last-child{border-bottom:none}
+.parola{font-family:"Baloo 2";font-weight:600;font-size:1.15rem;background:var(--ambra-fondo);border-radius:8px;padding:3px 10px}
+.mini{border:1.5px solid var(--linea);border-radius:10px;padding:8px 14px;font-size:.9rem}
+.mini.ok{border-color:var(--salvia);color:var(--salvia);font-weight:700}
+.mini.err{border-color:var(--ambra);color:var(--ambra);font-weight:700}
+.mini.scelto{background:var(--salvia-chiaro)}
+.riga-verifica.decisa{opacity:.55}
+
+/* ---------- pannello Aa ---------- */
+.aa-btn{position:fixed;top:16px;right:16px;z-index:60;width:48px;height:48px;border-radius:50%;background:var(--inchiostro);color:#fff;font-family:"Baloo 2";font-weight:700;font-size:1.05rem;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.aa-panel{position:fixed;top:74px;right:16px;z-index:60;width:290px;background:var(--scheda);border:1.5px solid var(--linea);border-radius:var(--raggio);padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.12);display:none}
+.aa-panel.on{display:block}
+.aa-panel h3{margin-bottom:4px}
+.aa-panel .hint{margin-bottom:14px}
+.aa-row{margin:12px 0}
+.aa-row label{display:block;font-size:.85rem;font-weight:700;margin-bottom:6px}
+.aa-row .set{display:flex;gap:6px}
+.aa-row .set button{flex:1;border:1.5px solid var(--linea);border-radius:10px;padding:8px 4px;font-size:.85rem}
+.aa-row .set button.scelto{background:var(--salvia-chiaro);border-color:var(--salvia);color:var(--salvia);font-weight:700}
+
+.switch-ruolo{display:flex;background:var(--scheda);border:1.5px solid var(--linea);border-radius:999px;padding:4px;gap:4px}
+.switch-ruolo button{border-radius:999px;padding:6px 16px;font-size:.85rem}
+.switch-ruolo button.scelto{background:var(--inchiostro);color:#fff;font-weight:700}
+
+footer.nota{margin-top:26px;font-size:.8rem;color:var(--grigio);text-align:center}
+</style>
+</head>
+<body>
+
+<button class="aa-btn" id="aaBtn" aria-expanded="false" aria-controls="aaPanel" title="Regola la lettura">Aa</button>
+<div class="aa-panel" id="aaPanel" role="dialog" aria-label="Regola la lettura">
+  <h3>Regola la lettura</h3>
+  <p class="hint">Per tutti, dallo stesso menù. Nessuna "modalità speciale".</p>
+  <div class="aa-row"><label>Grandezza del testo</label>
+    <div class="set" data-var="fs"><button data-v="1rem" class="scelto">Normale</button><button data-v="1.15rem">Grande</button><button data-v="1.3rem">Molto grande</button></div></div>
+  <div class="aa-row"><label>Spazio tra le righe</label>
+    <div class="set" data-var="lh"><button data-v="1.65" class="scelto">Normale</button><button data-v="2">Arioso</button><button data-v="2.4">Molto arioso</button></div></div>
+  <div class="aa-row"><label>Spazio tra le lettere</label>
+    <div class="set" data-var="ls"><button data-v="0em" class="scelto">Normale</button><button data-v="0.04em">Largo</button><button data-v="0.08em">Molto largo</button></div></div>
+  <div class="aa-row"><label>Spazio tra le parole</label>
+    <div class="set" data-var="ws"><button data-v="0em" class="scelto">Normale</button><button data-v="0.16em">Largo</button></div></div>
+</div>
+
+<div class="app">
+  <header class="top">
+    <div class="logo">
+      <div class="mark">RC</div>
+      <div><div class="name">Reading Coach</div><div class="sub">Biblioteca 3.0 · prototipo</div></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="chip" id="chipUtente" hidden><span class="dot"></span><span id="chipNome">—</span></span>
+      <div class="switch-ruolo" role="group" aria-label="Cambia vista">
+        <button id="ruoloAlunno" class="scelto">Alunno</button>
+        <button id="ruoloDocente">Docente</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== 1. ACCESSO ========== -->
+  <section class="screen on" id="s-accesso">
+    <div class="card">
+      <p class="eyebrow">Chi sta leggendo?</p>
+      <h1 class="display" style="font-size:1.6rem">Scegli il tuo animale</h1>
+      <p class="hint">Nell'app non c'è il tuo nome vero: solo la maestra sa chi sei. I tuoi dati restano tuoi.</p>
+      <div class="animali" id="grigliaAnimali"></div>
+    </div>
+  </section>
+
+  <!-- ========== 2. IL MIO LIBRO ========== -->
+  <section class="screen" id="s-libro">
+    <div class="card">
+      <p class="eyebrow">Il mio libro</p>
+      <h1 class="display" style="font-size:1.5rem">Prima il libro vero, poi lo schermo</h1>
+      <p class="hint" style="margin-bottom:16px">Prendi il libro dallo scaffale della biblioteca e apri la pagina che stai leggendo.</p>
+      <div class="libro card" style="border-style:dashed">
+        <div class="copertina">P</div>
+        <div>
+          <strong>Le avventure di Pinocchio</strong><br>
+          <span class="hint">Carlo Collodi · scaffale Narrativa · prestito attivo</span><br>
+          <span class="hint">Sei arrivato a <strong>pagina 12</strong></span>
+        </div>
+      </div>
+      <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn" data-go="s-leggo">Leggo questa pagina</button>
+        <button class="btn ghost" data-go="s-comefunziona">Come funziona l'app?</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 3. LEGGO ========== -->
+  <section class="screen" id="s-leggo">
+    <div class="card">
+      <p class="eyebrow">Pinocchio · pagina 12</p>
+      <p class="passo" id="passoTesto"></p>
+      <div class="registra">
+        <button class="mic" id="btnMic" aria-label="Inizia a leggere ad alta voce">🎙</button>
+        <p class="stato-rec" id="statoRec">Quando sei pronto, tocca il microfono e leggi con la tua voce.</p>
+        <p class="hint">Niente cronometro sullo schermo: leggi con calma, i numeri li guardiamo dopo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 4. COM'È ANDATA ========== -->
+  <section class="screen" id="s-risultato">
+    <div class="card">
+      <p class="eyebrow">Com'è andata</p>
+      <h1 class="display" style="font-size:1.5rem">Bella lettura, <span class="nomeInline">—</span>.</h1>
+      <p class="passo" id="passoEsito" style="font-size:calc(var(--fs)*1.1)"></p>
+      <p class="legenda"><span class="sw"></span> parole <strong>da riascoltare</strong>: forse l'app ha sentito male. Decide la maestra, non il computer.</p>
+      <div class="numeri">
+        <div class="numero"><div class="val" id="nSillabe">—</div><div class="lab">sillabe al minuto</div></div>
+        <div class="numero"><div class="val" id="nParole">—</div><div class="lab">parole lette</div></div>
+        <div class="numero"><div class="val" id="nRiascolti">—</div><div class="lab">da riascoltare</div></div>
+      </div>
+      <div class="formula">
+        <strong>Come nasce questo numero?</strong><br>
+        <code>sillabe giuste ÷ minuti di lettura</code> — tutto qui. Nessuna magia, nessun voto.
+      </div>
+      <div class="attesa" id="boxAttesa">⏳ <span>Le parole segnate aspettano <strong>l'ascolto della maestra</strong>. Il punteggio diventa definitivo solo dopo.</span></div>
+      <div style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn" data-go="s-progressi">Guarda i miei progressi</button>
+        <button class="btn ghost" data-go="s-leggo">Rileggo il passo</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 5. I MIEI PROGRESSI ========== -->
+  <section class="screen" id="s-progressi">
+    <div class="card">
+      <p class="eyebrow">I miei progressi</p>
+      <h1 class="display" style="font-size:1.5rem">Solo tu contro il te di ieri</h1>
+      <p class="hint">Nessuna classifica: qui ci sono soltanto le tue letture. Confrontati con te stesso.</p>
+      <svg class="grafico" viewBox="0 0 640 260" role="img" aria-label="Grafico delle sillabe al minuto nelle ultime sei letture, in crescita da 138 a 172" id="svgProg"></svg>
+      <p class="hint" id="frasProg"></p>
+    </div>
+  </section>
+
+  <!-- ========== 6. COME FUNZIONA (white box) ========== -->
+  <section class="screen" id="s-comefunziona">
+    <div class="card">
+      <p class="eyebrow">La scatola aperta</p>
+      <h1 class="display" style="font-size:1.5rem">Come funziona, davvero</h1>
+      <div style="margin-top:14px;display:grid;gap:14px">
+        <div><strong>1 · Che cosa ascolta l'app?</strong><br><span class="hint">Solo la tua voce mentre leggi il passo, sul tablet della biblioteca. L'audio non viaggia su internet.</span></div>
+        <div><strong>2 · Che cosa conta?</strong><br><span class="hint">Le sillabe giuste e i minuti. La formula è una sola: <code style="font-family:ui-monospace,monospace;background:var(--carta);border-radius:6px;padding:2px 6px">sillabe ÷ minuti</code>. La maestra può leggerla, tu anche.</span></div>
+        <div><strong>3 · L'app può sbagliare?</strong><br><span class="hint">Sì: le voci dei bambini a volte la confondono. Per questo segna le parole in giallo e <strong>chiede alla maestra</strong>, che ha sempre l'ultima parola.</span></div>
+        <div><strong>4 · Dove finisce la mia voce?</strong><br><span class="hint">Dopo l'ascolto della maestra la registrazione viene cancellata. Restano solo i numeri, con il tuo nome-animale.</span></div>
+        <div><strong>5 · Che cosa NON sa fare l'app?</strong><br><span class="hint">Non sente se una storia ti piace, non capisce l'espressione della tua voce, non sa se hai capito. Quello si scopre parlandone in classe.</span></div>
+      </div>
+      <div style="margin-top:20px"><button class="btn ghost" data-go="s-libro">Torna al mio libro</button></div>
+    </div>
+  </section>
+
+  <!-- ========== VISTA DOCENTE ========== -->
+  <section class="screen" id="s-docente">
+    <div class="card">
+      <p class="eyebrow">Vista docente · human-in-the-loop</p>
+      <h1 class="display" style="font-size:1.5rem">Parole da riascoltare — Volpe 07</h1>
+      <p class="hint">Il riconoscimento vocale ha segnalato 3 parole. Nessun dato entra nel registro dei progressi senza la tua conferma. Le registrazioni saranno cancellate al termine della revisione.</p>
+      <div id="listaVerifiche" style="margin-top:10px"></div>
+      <div class="formula" id="esitoDocente" style="display:none">
+        <strong>Revisione completata.</strong> Punteggio ricalcolato in modo trasparente: <span id="ricalcolo"></span>. La registrazione audio è stata eliminata; nel sistema restano solo i dati numerici pseudonimizzati.
+      </div>
+      <p class="hint" style="margin-top:14px">Report esportabile per il PDP · dati confrontabili con le Prove MT di inizio percorso.</p>
+    </div>
+  </section>
+
+  <footer class="nota">Prototipo dimostrativo — Project Work "Biblioteca 3.0" · nessun dato reale viene raccolto</footer>
+</div>
+
+<nav class="tabs" id="tabs" aria-label="Navigazione principale">
+  <button data-go="s-libro"><span class="ico">📖</span>Il mio libro</button>
+  <button data-go="s-leggo"><span class="ico">🎙</span>Leggo</button>
+  <button data-go="s-progressi"><span class="ico">🌱</span>Progressi</button>
+  <button data-go="s-comefunziona"><span class="ico">🔍</span>Come funziona</button>
+</nav>
+
+<script>
+/* ---------- dati simulati ---------- */
+const ANIMALI=[["🦊","Volpe 07"],["🦉","Gufo 12"],["🐢","Tartaruga 03"],["🐬","Delfino 09"],["🦔","Riccio 05"],["🐝","Ape 11"]];
+const PASSO="C'era una volta un pezzo di legno. Non era un legno di lusso, ma un semplice pezzo da catasta, di quelli che d'inverno si mettono nelle stufe e nei caminetti per accendere il fuoco e per riscaldare le stanze.".split(" ");
+const RIASCOLTA=[9,22,31]; // indici parole segnate (simulazione ASR)
+const STORICO=[138,141,150,147,158,164];
+let ultimaLettura=null;
+
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+
+/* ---------- navigazione ---------- */
+function vai(id){
+  $$('.screen').forEach(s=>s.classList.remove('on'));
+  $('#'+id).classList.add('on');
+  $$('#tabs button').forEach(b=>{
+    if(b.dataset.go===id) b.setAttribute('aria-current','page');
+    else b.removeAttribute('aria-current');
+  });
+  window.scrollTo({top:0});
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-go]');
+  if(t) vai(t.dataset.go);
+});
+
+/* ---------- accesso con pseudonimi ---------- */
+const griglia=$('#grigliaAnimali');
+ANIMALI.forEach(([emo,nome])=>{
+  const b=document.createElement('button');
+  b.innerHTML=`<span class="emo">${emo}</span><span>${nome.split(' ')[0]}</span><span class="cod">${nome}</span>`;
+  b.addEventListener('click',()=>{
+    $('#chipNome').textContent=`${emo} ${nome}`;
+    $('#chipUtente').hidden=false;
+    $$('.nomeInline').forEach(n=>n.textContent=nome.split(' ')[0]);
+    vai('s-libro');
+  });
+  griglia.appendChild(b);
+});
+
+/* ---------- schermata di lettura ---------- */
+$('#passoTesto').textContent=PASSO.join(' ');
+let rec=false, t0=0;
+$('#btnMic').addEventListener('click',()=>{
+  const mic=$('#btnMic'), stato=$('#statoRec');
+  if(!rec){
+    rec=true; t0=Date.now();
+    mic.classList.add('rec'); mic.textContent='◼'; mic.setAttribute('aria-label','Ho finito di leggere');
+    stato.textContent='Ti sto ascoltando… leggi con la tua voce, senza fretta.';
+  }else{
+    rec=false;
+    mic.classList.remove('rec'); mic.textContent='🎙'; mic.setAttribute('aria-label','Inizia a leggere ad alta voce');
+    stato.textContent='Quando sei pronto, tocca il microfono e leggi con la tua voce.';
+    const minuti=Math.max((Date.now()-t0)/60000, 0.35); // demo: durata minima
+    mostraEsito(minuti);
+    vai('s-risultato');
+  }
+});
+
+function sillabeCirca(parola){return Math.max(1,Math.round(parola.replace(/[^a-zàèéìòù]/gi,'').length/2.6));}
+
+function mostraEsito(minuti){
+  const cont=$('#passoEsito'); cont.innerHTML='';
+  let sillabe=0;
+  PASSO.forEach((p,i)=>{
+    const s=document.createElement('span');
+    s.className='w'+(RIASCOLTA.includes(i)?' riascolta':'');
+    s.textContent=p; cont.appendChild(s); cont.append(' ');
+    if(!RIASCOLTA.includes(i)) sillabe+=sillabeCirca(p);
+  });
+  const spm=Math.round(sillabe/minuti);
+  ultimaLettura={spm,minuti,sillabe};
+  $('#nSillabe').textContent=spm;
+  $('#nParole').textContent=PASSO.length;
+  $('#nRiascolti').textContent=RIASCOLTA.length;
+  disegnaGrafico([...STORICO, Math.min(spm,190)]);
+}
+
+/* ---------- grafico progressi (SVG) ---------- */
+function disegnaGrafico(dati){
+  const svg=$('#svgProg'); svg.innerHTML='';
+  const W=640,H=260,mL=46,mR=20,mT=20,mB=36;
+  const min=Math.min(...dati)-10, max=Math.max(...dati)+10;
+  const x=i=>mL+i*(W-mL-mR)/(dati.length-1);
+  const y=v=>H-mB-(v-min)*(H-mT-mB)/(max-min);
+  let g='';
+  // assi + griglia leggera
+  g+=`<line class="asse" x1="${mL}" y1="${H-mB}" x2="${W-mR}" y2="${H-mB}"/>`;
+  for(let v=Math.ceil(min/20)*20; v<=max; v+=20){
+    g+=`<line class="asse" x1="${mL}" y1="${y(v)}" x2="${W-mR}" y2="${y(v)}" opacity=".5"/>`;
+    g+=`<text x="${mL-8}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+  }
+  g+=`<polyline class="curva" points="${dati.map((v,i)=>x(i)+','+y(v)).join(' ')}"/>`;
+  dati.forEach((v,i)=>{
+    const oggi=i===dati.length-1;
+    g+=`<circle class="punto${oggi?' oggi':''}" cx="${x(i)}" cy="${y(v)}" r="6"/>`;
+    g+=`<text x="${x(i)}" y="${H-mB+18}" text-anchor="middle">${oggi?'oggi':'lett. '+(i+1)}</text>`;
+  });
+  g+=`<text x="${mL}" y="${mT-4}">sillabe al minuto</text>`;
+  svg.innerHTML=g;
+  const delta=dati[dati.length-1]-dati[0];
+  $('#frasProg').textContent=`Dalla prima lettura sei cresciuto di ${delta} sillabe al minuto. Il numero racconta l'allenamento; quanto ti è piaciuta la storia lo racconti tu.`;
+}
+disegnaGrafico([...STORICO,172]);
+
+/* ---------- vista docente ---------- */
+const VERIFICHE=[
+  {parola:"catasta", ctx:"…semplice pezzo da catasta…"},
+  {parola:"caminetti", ctx:"…nelle stufe e nei caminetti…"},
+  {parola:"riscaldare", ctx:"…per riscaldare le stanze…"}
+];
+let decise=0, confermatiErrori=0;
+function costruisciVerifiche(){
+  const box=$('#listaVerifiche'); box.innerHTML=''; decise=0; confermatiErrori=0; $('#esitoDocente').style.display='none';
+  VERIFICHE.forEach(v=>{
+    const r=document.createElement('div'); r.className='riga-verifica';
+    r.innerHTML=`<div><span class="parola">${v.parola}</span><br><span class="hint">${v.ctx}</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="mini" data-a="play">▶ Riascolta</button>
+        <button class="mini ok" data-a="ok">Era giusta</button>
+        <button class="mini err" data-a="err">Errore confermato</button>
+      </div>`;
+    r.addEventListener('click',e=>{
+      const b=e.target.closest('button'); if(!b) return;
+      if(b.dataset.a==='play'){ b.textContent='… ascolto'; setTimeout(()=>b.textContent='▶ Riascolta',900); return; }
+      if(r.classList.contains('decisa')) return;
+      r.classList.add('decisa'); b.classList.add('scelto');
+      decise++; if(b.dataset.a==='err') confermatiErrori++;
+      if(decise===VERIFICHE.length){
+        const base=(ultimaLettura&&ultimaLettura.spm)||172;
+        const finale=base + (VERIFICHE.length-confermatiErrori)*3; // sillabe reintegrate se la parola era giusta
+        $('#ricalcolo').innerHTML=`<code>${base} + sillabe reintegrate = <strong>${finale} sill/min</strong></code>`;
+        $('#esitoDocente').style.display='block';
+      }
+    });
+    box.appendChild(r);
+  });
+}
+costruisciVerifiche();
+
+/* ---------- switch ruolo ---------- */
+$('#ruoloAlunno').addEventListener('click',()=>{ setRuolo('alunno'); vai('s-libro'); });
+$('#ruoloDocente').addEventListener('click',()=>{ setRuolo('docente'); costruisciVerifiche(); vai('s-docente'); });
+function setRuolo(r){
+  $('#ruoloAlunno').classList.toggle('scelto',r==='alunno');
+  $('#ruoloDocente').classList.toggle('scelto',r==='docente');
+  $('#tabs').style.display = r==='alunno' ? 'flex':'none';
+}
+
+/* ---------- pannello Aa ---------- */
+$('#aaBtn').addEventListener('click',()=>{
+  const p=$('#aaPanel'); const on=p.classList.toggle('on');
+  $('#aaBtn').setAttribute('aria-expanded',on);
+});
+$$('.aa-row .set').forEach(set=>{
+  set.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    set.querySelectorAll('button').forEach(x=>x.classList.remove('scelto'));
+    b.classList.add('scelto');
+    document.documentElement.style.setProperty('--'+set.dataset.var, b.dataset.v);
+  });
+});
+</script>
+</body>
+</html>
